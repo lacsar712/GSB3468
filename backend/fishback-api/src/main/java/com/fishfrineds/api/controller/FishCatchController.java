@@ -14,6 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/catches")
 @RequiredArgsConstructor
@@ -37,6 +39,11 @@ public class FishCatchController {
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return ApiResponse.success(fishCatchService.findAll(pageable));
+    }
+    
+    @GetMapping("/fish-types")
+    public ApiResponse<List<String>> fishTypes() {
+        return ApiResponse.success(fishCatchService.findDistinctFishTypes());
     }
     
     @GetMapping("/{id}")
@@ -81,10 +88,13 @@ public class FishCatchController {
     
     @GetMapping("/search")
     public ApiResponse<PageResult<FishCatchDTO>> searchByType(
-            @RequestParam String fishType,
+            @RequestParam(required = false) String fishType,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        if (fishType == null || fishType.isEmpty()) {
+            return ApiResponse.success(fishCatchService.findAll(pageable));
+        }
         return ApiResponse.success(fishCatchService.findByFishType(fishType, pageable));
     }
 }
