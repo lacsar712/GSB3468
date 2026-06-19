@@ -9,6 +9,19 @@
         登录后发布
       </router-link>
     </div>
+    <div class="filter-bar">
+      <label for="fish-type-filter" class="filter-label">鱼种筛选：</label>
+      <select 
+        id="fish-type-filter"
+        v-model="selectedFishType" 
+        @change="onFishTypeChange"
+        data-testid="catch-fishtype-filter"
+        class="filter-select"
+      >
+        <option value="">全部</option>
+        <option v-for="fishType in fishTypes" :key="fishType" :value="fishType">{{ fishType }}</option>
+      </select>
+    </div>
     <div class="catch-list">
       <div v-for="item in catches" :key="item.id" class="catch-card">
         <h3>{{ item.title }}</h3>
@@ -29,11 +42,17 @@ import { ref, onMounted } from 'vue'
 import { isLoggedIn } from '../utils/auth.js'
 
 const catches = ref([])
+const fishTypes = ref([])
+const selectedFishType = ref('')
 const API_URL = '/api'
 
-onMounted(async () => {
+const fetchCatches = async (fishType = '') => {
   try {
-    const res = await fetch(`${API_URL}/catches`)
+    let url = `${API_URL}/catches/search`
+    if (fishType) {
+      url += `?fishType=${encodeURIComponent(fishType)}`
+    }
+    const res = await fetch(url)
     const data = await res.json()
     if (data.code === 200) {
       catches.value = data.data.content
@@ -41,6 +60,29 @@ onMounted(async () => {
   } catch (err) {
     console.error('Failed to fetch catches:', err)
   }
+}
+
+const fetchFishTypes = async () => {
+  try {
+    const res = await fetch(`${API_URL}/catches/fish-types`)
+    const data = await res.json()
+    if (data.code === 200) {
+      fishTypes.value = data.data
+    }
+  } catch (err) {
+    console.error('Failed to fetch fish types:', err)
+  }
+}
+
+const onFishTypeChange = () => {
+  fetchCatches(selectedFishType.value)
+}
+
+onMounted(async () => {
+  await Promise.all([
+    fetchCatches(),
+    fetchFishTypes()
+  ])
 })
 
 const formatDate = (dateStr) => {
@@ -58,6 +100,34 @@ const formatDate = (dateStr) => {
 h1 {
   color: #2c3e50;
   margin-bottom: 20px;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+.filter-label {
+  color: #555;
+  font-weight: 500;
+}
+
+.filter-select {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fff;
+  cursor: pointer;
+  min-width: 150px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.filter-select:focus {
+  border-color: #f59e0b;
 }
 
 .catch-list {
