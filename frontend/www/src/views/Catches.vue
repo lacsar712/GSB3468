@@ -9,6 +9,18 @@
         登录后发布
       </router-link>
     </div>
+    <div class="filter-bar">
+      <label class="filter-label">鱼种筛选：</label>
+      <select
+        v-model="selectedFishType"
+        @change="loadCatches"
+        data-testid="catch-fishtype-filter"
+        class="filter-select"
+      >
+        <option value="">全部</option>
+        <option v-for="ft in fishTypes" :key="ft" :value="ft">{{ ft }}</option>
+      </select>
+    </div>
     <div class="catch-list">
       <div v-for="item in catches" :key="item.id" class="catch-card">
         <h3>{{ item.title }}</h3>
@@ -29,11 +41,16 @@ import { ref, onMounted } from 'vue'
 import { isLoggedIn } from '../utils/auth.js'
 
 const catches = ref([])
+const fishTypes = ref([])
+const selectedFishType = ref('')
 const API_URL = '/api'
 
-onMounted(async () => {
+const loadCatches = async () => {
   try {
-    const res = await fetch(`${API_URL}/catches`)
+    const url = selectedFishType.value
+      ? `${API_URL}/catches/search?fishType=${encodeURIComponent(selectedFishType.value)}`
+      : `${API_URL}/catches`
+    const res = await fetch(url)
     const data = await res.json()
     if (data.code === 200) {
       catches.value = data.data.content
@@ -41,6 +58,23 @@ onMounted(async () => {
   } catch (err) {
     console.error('Failed to fetch catches:', err)
   }
+}
+
+const loadFishTypes = async () => {
+  try {
+    const res = await fetch(`${API_URL}/catches/fish-types`)
+    const data = await res.json()
+    if (data.code === 200) {
+      fishTypes.value = data.data || []
+    }
+  } catch (err) {
+    console.error('Failed to fetch fish types:', err)
+  }
+}
+
+onMounted(async () => {
+  await loadFishTypes()
+  await loadCatches()
 })
 
 const formatDate = (dateStr) => {
@@ -58,6 +92,36 @@ const formatDate = (dateStr) => {
 h1 {
   color: #2c3e50;
   margin-bottom: 20px;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.filter-label {
+  color: #2c3e50;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fff;
+  color: #2c3e50;
+  min-width: 160px;
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
 }
 
 .catch-list {

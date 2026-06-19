@@ -14,6 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/catches")
 @RequiredArgsConstructor
@@ -86,5 +88,10 @@ public class FishCatchController {
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return ApiResponse.success(fishCatchService.findByFishType(fishType, pageable));
+    }
+    
+    @GetMapping("/fish-types")
+    public ApiResponse<List<String>> getFishTypes() {
+        return ApiResponse.success(fishCatchService.getDistinctFishTypes());
     }
 }
