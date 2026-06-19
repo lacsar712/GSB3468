@@ -9,6 +9,13 @@
         登录后发布
       </router-link>
     </div>
+    <div class="filter-bar">
+      <label for="fishTypeFilter">按鱼种筛选：</label>
+      <select id="fishTypeFilter" v-model="selectedFishType" @change="fetchCatches" data-testid="catch-fishtype-filter">
+        <option value="">全部</option>
+        <option v-for="type in fishTypes" :key="type" :value="type">{{ type }}</option>
+      </select>
+    </div>
     <div class="catch-list">
       <div v-for="item in catches" :key="item.id" class="catch-card">
         <h3>{{ item.title }}</h3>
@@ -29,11 +36,17 @@ import { ref, onMounted } from 'vue'
 import { isLoggedIn } from '../utils/auth.js'
 
 const catches = ref([])
+const fishTypes = ref([])
+const selectedFishType = ref('')
 const API_URL = '/api'
 
-onMounted(async () => {
+const fetchCatches = async () => {
   try {
-    const res = await fetch(`${API_URL}/catches`)
+    let url = `${API_URL}/catches`
+    if (selectedFishType.value) {
+      url = `${API_URL}/catches/search?fishType=${encodeURIComponent(selectedFishType.value)}`
+    }
+    const res = await fetch(url)
     const data = await res.json()
     if (data.code === 200) {
       catches.value = data.data.content
@@ -41,6 +54,23 @@ onMounted(async () => {
   } catch (err) {
     console.error('Failed to fetch catches:', err)
   }
+}
+
+const fetchFishTypes = async () => {
+  try {
+    const res = await fetch(`${API_URL}/catches/fish-types`)
+    const data = await res.json()
+    if (data.code === 200) {
+      fishTypes.value = data.data
+    }
+  } catch (err) {
+    console.error('Failed to fetch fish types:', err)
+  }
+}
+
+onMounted(async () => {
+  await fetchFishTypes()
+  await fetchCatches()
 })
 
 const formatDate = (dateStr) => {
@@ -122,5 +152,36 @@ h1 {
 .create-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.filter-bar label {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.filter-bar select {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fff;
+  cursor: pointer;
+  min-width: 150px;
+}
+
+.filter-bar select:focus {
+  outline: none;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
 }
 </style>

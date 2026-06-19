@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -69,8 +70,13 @@ public class FishCatchService {
     
     @Transactional(readOnly = true)
     public PageResult<FishCatchDTO> findByFishType(String fishType, Pageable pageable) {
-        Page<FishCatch> page = fishCatchRepository.findByFishTypeContainingAndIsDeletedFalse(fishType, pageable);
+        Page<FishCatch> page = fishCatchRepository.findByFishTypeAndIsDeletedFalse(fishType, pageable);
         return PageResult.from(page.map(this::toDTO));
+    }
+    
+    @Transactional(readOnly = true)
+    public List<String> findDistinctFishTypes() {
+        return fishCatchRepository.findDistinctFishTypes();
     }
     
     private FishCatchDTO toDTO(FishCatch catch_) {
