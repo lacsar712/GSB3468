@@ -1,0 +1,66 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: fishfrineds-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass123
+      MYSQL_DATABASE: fishfrineds
+      MYSQL_USER: fishfrineds
+      MYSQL_PASSWORD: fishfrineds123
+      LANG: C.UTF-8
+    ports:
+      - "6404:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpass123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+
+  backend:
+    build:
+      context: ./backend/fishback-api
+      dockerfile: Dockerfile
+    container_name: fishfrineds-backend
+    restart: unless-stopped
+    ports:
+      - "6403:8000"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/fishfrineds?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+      MYSQL_USER: fishfrineds
+      MYSQL_PASSWORD: fishfrineds123
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend-www:
+    build:
+      context: ./frontend/www
+      dockerfile: Dockerfile
+    container_name: fishfrineds-www
+    restart: unless-stopped
+    ports:
+      - "6401:80"
+    depends_on:
+      - backend
+
+  frontend-fishback:
+    build:
+      context: ./frontend/fishback
+      dockerfile: Dockerfile
+    container_name: fishfrineds-fishback
+    restart: unless-stopped
+    ports:
+      - "6402:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
