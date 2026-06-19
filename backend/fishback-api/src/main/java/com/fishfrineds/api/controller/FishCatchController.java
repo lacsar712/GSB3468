@@ -81,10 +81,18 @@ public class FishCatchController {
     
     @GetMapping("/search")
     public ApiResponse<PageResult<FishCatchDTO>> searchByType(
-            @RequestParam String fishType,
+            @RequestParam(required = false) String fishType,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        if (fishType == null || fishType.isEmpty()) {
+            return ApiResponse.success(fishCatchService.findAll(pageable));
+        }
         return ApiResponse.success(fishCatchService.findByFishType(fishType, pageable));
+    }
+    
+    @GetMapping("/fish-types")
+    public ApiResponse<java.util.List<String>> getFishTypes() {
+        return ApiResponse.success(fishCatchService.findDistinctFishTypes());
     }
 }
